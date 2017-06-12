@@ -22,7 +22,7 @@ class ProtobufField {
 	private boolean group;
 
 	private Map<String, String> options;
-	
+
 	public ProtobufField() {
 		options = new HashMap<String, String>();
 	}
@@ -149,11 +149,11 @@ class ProtobufField {
 	public void setOption(String option, String value) {
 		this.options.put(option, value);
 	}
-	
+
 	public Map<String, String> getOptions() {
 		return this.options;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "ProtobufField [name=" + name + ", beanName=" + beanName + ", type=" + type + ", streamBeanType=" + streamBeanType + ", fullyClarifiedJavaType=" + fullyClarifiedJavaType + ", complexType=" + complexType + ", nature=" + nature

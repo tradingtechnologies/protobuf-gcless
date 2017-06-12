@@ -17,19 +17,19 @@ final class ProtobufMessage {
 	public boolean isGroup() {
 		return group;
 	}
-	
+
 	public void setGroup(boolean group) {
 		this.group = group;
 	}
-	
+
 	public String getFullyClarifiedProtoName() {
 		return fullyClarifiedProtoName;
 	}
-	
+
 	public void setFullyClarifiedProtoName(String fullyClarifiedProtoName) {
 		this.fullyClarifiedProtoName = fullyClarifiedProtoName;
 	}
-	
+
 	public String getFullyClarifiedJavaName() {
 		return fullyClarifiedJavaName;
 	}

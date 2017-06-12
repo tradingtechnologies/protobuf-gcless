@@ -1,9 +1,18 @@
 package com.google.code.proto.gcless;
 
+import java.util.Map;
+import java.util.HashMap;
+
 final class EnumValue {
 
 	private String name;
 	private long id;
+
+	private Map<String, String> options;
+
+        public EnumValue() {
+		options = new HashMap<String, String>();
+	}
 
 	public String getName() {
 		return name;
@@ -19,6 +28,14 @@ final class EnumValue {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+        public void setOption(String option, String value) {
+		this.options.put(option, value);
+	}
+
+	public Map<String, String> getOptions() {
+		return this.options;
 	}
 
 	@Override

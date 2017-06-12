@@ -9,7 +9,13 @@ class Tokens {
 
 	static final String PROTO_PACKAGE = "package";
 	static final String SYNTAX = "syntax";
+	static final String GO_PACKAGE = "go_package";
 	static final String JAVA_PACKAGE = "java_package";
+	static final String JAVA_OUTER_CLASSNAME = "java_outer_classname";
+	static final String JAVA_MULT_FILES = "java_multiple_files";
+	static final String CSHARP_NAMESPACE = "csharp_namespace";
+	static final String OBJC_CLASS_PREFIX = "objc_class_prefix";
+	static final String OPTIMIZE_FOR = "optimize_for";
 	static final String MESSAGE = "message";
 	static final String OPTIONAL_FIELD = "optional";
 	static final String REPEATED_FIELD = "repeated";
@@ -17,6 +23,7 @@ class Tokens {
 	static final String BRACE_START = "{";
 	static final String BRACE_END = "}";
 	static final String ENUM_TOKEN = "enum";
+	static final String ONEOF_TOKEN = "oneof";
 	static final String SQUARE_BRACE_START = "[";
 	static final String SQUARE_BRACE_END = "]";
 	static final String DEFAULT = "default";
@@ -24,11 +31,14 @@ class Tokens {
 	static final String DEPRECATED = "deprecated";
 	static final String OPTION = "option";
 	static final String IMPORT_TOKEN = "import";
-	static final String JAVA_OUTER_CLASSNAME = "java_outer_classname";
 	static final String OPEN_PARENTHESIS = "(";
 	static final String CLOSE_PARENTHESIS = ")";
+	static final String EXTENSIONS = "extensions";
+	static final String RESERVED = "reserved";
+	static final String FIXENUM = "fixenum";
 
 	private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("[a-zA-Z_]+");
+	private static final Pattern MAP_PATTERN = Pattern.compile("map<[a-zA-Z_.]*");
 	private static final Set<String> FIELD_TYPES = new HashSet<String>();
 
 	static {
@@ -63,12 +73,20 @@ class Tokens {
 		}
 		return false;
 	}
-	
+
 	static boolean isValidTag(long tag) {
 		if( tag > 268435455 || tag < -268435455 ) {
 			return false;
 		}
 		return true;
 	}
+
+        static boolean isValidMap(String str) {
+		Matcher m = MAP_PATTERN.matcher(str);
+		if (m.find()) {
+                    return true;
+                }
+                return false;
+        }
 
 }
