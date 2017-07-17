@@ -42,6 +42,7 @@ class MemlessParser {
 		tokens = file.split("[ \n\r]");
 
 		String curToken = null;
+                String proto_version = "proto2";
 		while ((curToken = getNextIgnoreNewLine()) != null) {
 			if (curToken.equals(Tokens.PROTO_PACKAGE)) {
 				protoPackageName = getNextIgnoreNewLine();
@@ -51,7 +52,7 @@ class MemlessParser {
 				consume(";");
 				continue;
 			}
-			if (curToken.equals(Tokens.MESSAGE)) {
+                        else if (curToken.equals(Tokens.MESSAGE)) {
 				String messageName = getNextNotEmpty();
 				if (messageName == null || !Tokens.isIdentifier(messageName)) {
 					throw new Exception("Invalid message name. Invalid symbols found");
@@ -60,11 +61,11 @@ class MemlessParser {
 				curMessage.setName(messageName);
 				curMessage.setFullyClarifiedJavaName(messageName);
 				curMessage.setFullyClarifiedProtoName(messageName);
-				processInnerMessage(curMessage);
+				processInnerMessage(curMessage, proto_version);
 				messages.add(curMessage);
 				continue;
 			}
-			if (curToken.equals(Tokens.ENUM_TOKEN)) {
+                        else if (curToken.equals(Tokens.ENUM_TOKEN)) {
 				String enumName = getNextNotEmpty();
 				if (enumName == null || !Tokens.isIdentifier(enumName)) {
 					throw new Exception("Invalid enum name. Invalid symbols found");
@@ -77,7 +78,7 @@ class MemlessParser {
 				enums.add(curEnum);
 				continue;
 			}
-			if (curToken.equals(Tokens.OPTION)) {
+                        else if (curToken.equals(Tokens.OPTION)) {
 				String optionType = getNextIgnoreNewLine();
 				if (optionType != null && optionType.equals(Tokens.JAVA_OUTER_CLASSNAME)) {
 					consume("=");
@@ -85,7 +86,7 @@ class MemlessParser {
 					outerClassName = outerClassName.replaceAll("\"", "");
 					continue;
 				}
-				if (optionType != null && optionType.equals(Tokens.JAVA_PACKAGE)) {
+                                else if (optionType != null && optionType.equals(Tokens.JAVA_PACKAGE)) {
 					consume("=");
 					javaPackageName = getNextIgnoreNewLine();
 					if (null != packageSuffix) {
@@ -94,11 +95,31 @@ class MemlessParser {
 					javaPackageName = javaPackageName.replaceAll("\"", "");
 					continue;
 				}
+                                else if (optionType != null && optionType.equals(Tokens.JAVA_MULT_FILES)) {
+                                    consumeTillMessage(";");
+				    continue;
+                                }
+                                else if (optionType != null && optionType.equals(Tokens.OPTIMIZE_FOR)) {
+                                    consumeTillMessage(";");
+				    continue;
+                                }
+                                else if (optionType != null && optionType.equals(Tokens.GO_PACKAGE)) {
+                                    consumeTillMessage(";");
+				    continue;
+                                }
+                                else if (optionType != null && optionType.equals(Tokens.CSHARP_NAMESPACE)) {
+                                    consumeTillMessage(";");
+				    continue;
+                                }
+                                else if (optionType != null && optionType.equals(Tokens.OBJC_CLASS_PREFIX)) {
+                                    consumeTillMessage(";");
+				    continue;
+                                }
 				System.out.println("// option \"" + optionType + "\" is not supported");
 				consumeTillMessage(";");
 				continue;
 			}
-			if (curToken.equals(Tokens.IMPORT_TOKEN)) {
+                        else if (curToken.equals(Tokens.IMPORT_TOKEN)) {
 				String importFile = getNextIgnoreNewLine();
 				if (importFile == null) {
 					System.out.println("import file should be specified");
@@ -113,9 +134,10 @@ class MemlessParser {
 				importedEnums.addAll(parser.getEnums());
 				continue;
 			}
-			if (curToken.equals(Tokens.SYNTAX)) {
-				System.out.println("\"syntax\" is not supported");
-				consumeTillMessage(";");
+                        else if (curToken.equals(Tokens.SYNTAX)) {
+                                consume("=");
+                                proto_version = getNextIgnoreNewLine();
+				consume(";");
 			}
 		}
 
@@ -180,24 +202,29 @@ class MemlessParser {
 		}
 	}
 
-	private void processInnerMessage(ProtobufMessage parentMessage) throws Exception {
+	private void processInnerMessage(ProtobufMessage parentMessage, String proto_version) throws Exception {
 		String curToken = null;
+		String nextToken = null;
 		int intendtion = 0;
 		while ((curToken = getNextIgnoreNewLine()) != null) {
 			curToken = curToken.trim();
+                        nextToken = lookAhead(1);
 
-			if (curToken.equals(Tokens.BRACE_START)) {
+                        if (curToken.equals(";") || curToken.equals("")) {
+                                continue;
+                        }
+                        else if (curToken.equals(Tokens.BRACE_START)) {
 				intendtion++;
 				continue;
 			}
-			if (curToken.equals(Tokens.BRACE_END)) {
+                        else if (curToken.equals(Tokens.BRACE_END)) {
 				intendtion--;
 				if (intendtion == 0) {
 					return;
 				}
 				continue;
 			}
-			if (curToken.equals(Tokens.MESSAGE)) {
+                        else if ((curToken.equals(Tokens.MESSAGE) || curToken.equals(Tokens.ONEOF_TOKEN)) && !nextToken.equals("=")) {
 				String messageName = getNextNotEmpty();
 				if (messageName == null || !Tokens.isIdentifier(messageName)) {
 					throw new Exception("Invalid message name. Invalid symbols found");
@@ -206,25 +233,30 @@ class MemlessParser {
 				curMessage.setName(messageName);
 				curMessage.setFullyClarifiedJavaName(parentMessage.getFullyClarifiedJavaName() + "." + messageName);
 				curMessage.setFullyClarifiedProtoName(parentMessage.getFullyClarifiedProtoName() + "." + messageName);
-				processInnerMessage(curMessage);
+				processInnerMessage(curMessage, proto_version);
 				parentMessage.addNestedMessage(curMessage);
 				continue;
 			}
-			if (curToken.equals(Tokens.OPTIONAL_FIELD)) {
+                        else if (curToken.equals(Tokens.OPTIONAL_FIELD) && !nextToken.equals("=")) {
 				String type = getNextNotEmpty();
 				if (type == null || !Tokens.isValidFieldType(type)) {
 					throw new Exception("Invalid field type found: " + type);
 				}
+				if (Tokens.isValidMap(type)) {
+                                    // Ignore maps
+                                    consumeTillMessage(";");
+                                    continue;
+                                }
 				ProtobufField curField = new ProtobufField();
 				curField.setNature("optional");
 				if (type.equals("group")) {
-					processGroup(curField, parentMessage);
+					processGroup(curField, parentMessage, proto_version);
 					continue;
 				}
 				curField.setType(type);
 				String name = getNextNotEmpty();
-                if (name != null)   { name = name.trim(); }
-                if (name.isEmpty()) { continue; }
+                                if (name != null)   { name = name.trim(); }
+                                if (name.isEmpty()) { continue; }
 
 				if (name == null || !Tokens.isIdentifier(name)) {
 					throw new Exception("Invalid field name: '" + name + "'");
@@ -244,15 +276,20 @@ class MemlessParser {
 				consume(";");
 				continue;
 			}
-			if (curToken.equals(Tokens.REPEATED_FIELD)) {
+                        else if (curToken.equals(Tokens.REPEATED_FIELD)) {
 				String type = getNextNotEmpty();
 				if (type == null || !Tokens.isValidFieldType(type)) {
 					throw new Exception("Invalid field type found: " + type);
 				}
+				if (Tokens.isValidMap(type)) {
+                                    // Ignore maps
+                                    consumeTillMessage(";");
+                                    continue;
+                                }
 				ProtobufField curField = new ProtobufField();
 				curField.setNature("repeated");
 				if (type.equals("group")) {
-					processGroup(curField, parentMessage);
+					processGroup(curField, parentMessage, proto_version);
 					continue;
 				}
 				curField.setType(type);
@@ -275,15 +312,20 @@ class MemlessParser {
 				consume(";");
 				continue;
 			}
-			if (curToken.equals(Tokens.REQUIRED_FIELD)) {
+                        else if (curToken.equals(Tokens.REQUIRED_FIELD) && !nextToken.equals("=")) {
 				String type = getNextNotEmpty();
 				if (type == null || !Tokens.isValidFieldType(type)) {
 					throw new Exception("Invalid field type found: " + type);
 				}
+				if (Tokens.isValidMap(type)) {
+                                    // Ignore maps
+                                    consumeTillMessage(";");
+                                    continue;
+                                }
 				ProtobufField curField = new ProtobufField();
 				curField.setNature("required");
 				if (type.equals("group")) {
-					processGroup(curField, parentMessage);
+					processGroup(curField, parentMessage, proto_version);
 					continue;
 				}
 				curField.setType(type);
@@ -306,7 +348,7 @@ class MemlessParser {
 				consume(";");
 				continue;
 			}
-			if (curToken.equals(Tokens.ENUM_TOKEN)) {
+                        else if (curToken.equals(Tokens.ENUM_TOKEN)) {
 				String enumName = getNextNotEmpty();
 				if (enumName == null || !Tokens.isIdentifier(enumName)) {
 					throw new Exception("Invalid enum name. Invalid symbols found");
@@ -319,11 +361,59 @@ class MemlessParser {
 				parentMessage.addEnum(curEnum);
 				continue;
 			}
+                        else if (curToken.equals(Tokens.EXTENSIONS) || curToken.equals(Tokens.RESERVED)) {
+				consumeTillMessage(";");
+				continue;
+                        }
+                        else if (curToken.equals(Tokens.OPTION)) {
+                                // Don't handle message level options
+				consumeTillMessage(";");
+				continue;
+			}
+                        else {
+				String type = curToken;
+				if (type == null || !Tokens.isValidFieldType(type)) {
+					throw new Exception("Invalid field type found: " + type);
+				}
+				ProtobufField curField = new ProtobufField();
+				curField.setNature("optional");
+				if (type.equals("group")) {
+					processGroup(curField, parentMessage, proto_version);
+					continue;
+				}
+				if (Tokens.isValidMap(type)) {
+                                    // Ignore maps
+                                    consumeTillMessage(";");
+                                    continue;
+                                }
+				curField.setType(type);
+				String name = getNextNotEmpty();
+                                if (name != null)   { name = name.trim(); }
+                                if (name.isEmpty()) { continue; }
+
+				if (name == null || !Tokens.isIdentifier(name)) {
+					throw new Exception("Invalid field name: '" + name + "'");
+				}
+				curField.setName(name);
+				consume("=");
+				long tag = consumeLong();
+				if (!Tokens.isValidTag(tag)) {
+					throw new Exception("Invalid tag detected: " + tag);
+				}
+				curField.setTag(tag);
+				parentMessage.addField(curField);
+				String brace = lookAhead(1);
+				if (brace.equals(Tokens.SQUARE_BRACE_START)) {
+					processInnerSquareBraces(curField);
+				}
+				consume(";");
+				continue;
+			}
 		}
 		throw new Exception("Incomplete message: " + parentMessage);
 	}
 
-	private void processGroup(ProtobufField curField, ProtobufMessage parentMessage) throws Exception {
+	private void processGroup(ProtobufField curField, ProtobufMessage parentMessage, String proto_version) throws Exception {
 		curField.setGroup(true);
 		String groupName = getNextNotEmpty();
 		if (groupName == null || !Tokens.isIdentifier(groupName)) {
@@ -343,7 +433,7 @@ class MemlessParser {
 		curMessage.setGroup(true);
 		curMessage.setFullyClarifiedJavaName(parentMessage.getFullyClarifiedJavaName() + "." + groupName);
 		curMessage.setFullyClarifiedProtoName(parentMessage.getFullyClarifiedProtoName() + "." + groupName);
-		processInnerMessage(curMessage);
+		processInnerMessage(curMessage, proto_version);
 		parentMessage.addNestedMessage(curMessage);
 	}
 
@@ -383,10 +473,47 @@ class MemlessParser {
 			}
 			curValue.setId(tag);
 			pEnum.addValue(curValue);
+                        String brace = lookAhead(1);
+                        if (brace.equals(Tokens.SQUARE_BRACE_START)) {
+                                processInnerSquareBracesEnum(curValue);
+                        }
 			consume(";");
 		}
 		throw new Exception("incomplete enum: " + pEnum);
 	}
+
+	private void processInnerSquareBracesEnum(EnumValue enum_value) throws Exception {
+		String curToken = null;
+		int intendtion = 0;
+		while ((curToken = getNextIgnoreNewLine()) != null) {
+			if (curToken.equals(Tokens.SQUARE_BRACE_START)) {
+				intendtion++;
+				continue;
+			}
+			if (curToken.equals(Tokens.SQUARE_BRACE_END)) {
+				intendtion--;
+				if (intendtion == 0) {
+					return;
+				}
+				continue;
+			}
+			if (curToken.equals(",")) {
+				continue;
+			}
+			if (curToken.equals(Tokens.OPEN_PARENTHESIS)) {
+				String optionName = getNextNotEmpty();
+				consume(Tokens.CLOSE_PARENTHESIS);
+				consume("=");
+				String optionValue = getNextNotEmpty();
+				if ((null != optionName) && (null != optionValue)) {
+                                        optionValue = optionValue.replace("\"", "");
+				        enum_value.setOption(optionName, optionValue);
+				}
+				continue;
+                        }
+                }
+		throw new Exception("Incomplete square braces");
+        }
 
 	private void processInnerSquareBraces(ProtobufField fields) throws Exception {
 		String curToken = null;
@@ -492,11 +619,21 @@ class MemlessParser {
 		}
 	}
 
-	private String getNextIgnoreNewLine() {
+        private String getNextIgnoreNewLine() {
 		String curToken = null;
 		do {
 			curToken = getNext();
 		} while (curToken != null && (curToken.equals("\n") || curToken.equals("\r") || curToken.equals("\n\r") || curToken.length() == 0));
+		return curToken;
+        }
+
+	private String getNextNotInMap() {
+		String curToken = null;
+                String lastCharInToken = null;
+		do {
+			curToken = getNext();
+                        lastCharInToken = curToken.substring(curToken.length() - 1);
+		} while (!lastCharInToken.equals(">"));
 		return curToken;
 	}
 

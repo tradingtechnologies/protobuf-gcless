@@ -8,11 +8,11 @@ final class ProtobufEnum {
 	private String name;
 	private String fullyClarifiedJavaName;
 	private String fullyClarifiedProtoName;
-	
+
 	public String getFullyClarifiedProtoName() {
 		return fullyClarifiedProtoName;
 	}
-	
+
 	public void setFullyClarifiedProtoName(String fullyClarifiedProtoName) {
 		this.fullyClarifiedProtoName = fullyClarifiedProtoName;
 	}

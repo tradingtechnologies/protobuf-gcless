@@ -1,6 +1,24 @@
+*.swp
 *.class
 
 # Package Files #
 *.jar
 *.war
 *.ear
+
+# Maven result
+target
+target/
+
+# Ignore all idea intelliJ files
+**/.idea/
+**/.idea_modules/
+*.eml
+*.iml
+
+# Ignore all idea Eclipse files
+.cproject
+.project
+.pydevproject
+.classpath
+.settings/
