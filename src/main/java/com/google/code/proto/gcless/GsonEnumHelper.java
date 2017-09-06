@@ -33,20 +33,42 @@ class GsonEnumHelper
 
         stringBuilder.append(
                  "package " + packageName + ";\n\n" +
-                 "\n" +
-                 "public final class GsonHelper {\n" +
-                 "\n" +
+                 "import com.google.gson.JsonDeserializationContext;\n" +
+                 "import com.google.gson.JsonDeserializer;\n" +
+                 "import com.google.gson.JsonElement;\n" +
+                 "import com.google.gson.JsonParseException;\n" +
+                 "import java.lang.reflect.Type;\n\n" +
+                 "public final class GsonHelper {\n\n" +
                  "static com.google.gson.Gson gson;\n\n" +
                  "public static com.google.gson.Gson getGson()\n" +
                  "{\n" +
                  "    if (gson == null) { gson = createBuilder().create(); } \n" +
                  "    return gson;\n" +
                  "}\n\n" +
+                 "public static class CustomLongDeserializer implements JsonDeserializer<Long> {\n" +
+                 "    @Override\n" +
+                 "    public Long deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {\n" +
+                 "        try {\n" +
+                 "            return element.getAsBigInteger().longValue();\n" +
+                 "        } catch (NumberFormatException e) {\n" +
+                 "            throw new JsonParseException(e);\n" +
+                 "        }\n" +
+                 "    }\n" +
+                 "}\n\n" +
+                 "public static class CustomByteArrayDeserializer implements JsonDeserializer<byte[]> {\n" +
+                 "    @Override\n" +
+                 "    public byte[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {\n" +
+                 "        return null;\n" +
+                 "    }\n" +
+                 "}\n\n" +
                  "static com.google.gson.GsonBuilder createBuilder() {\n" +
                  "    com.google.gson.GsonBuilder builder = new com.google.gson.GsonBuilder();\n" +
                  "    builder\n" +
-                 "       .excludeFieldsWithoutExposeAnnotation()\n" +
-                 "       .excludeFieldsWithModifiers(java.lang.reflect.Modifier.STATIC)\n"
+                 "        .disableHtmlEscaping()\n" +
+                 "        .excludeFieldsWithoutExposeAnnotation()\n" +
+                 "        .excludeFieldsWithModifiers(java.lang.reflect.Modifier.STATIC)\n" +
+                 "        .registerTypeAdapter(Long.class, new com.tradingtechnologies.messaging.GsonHelper.CustomLongDeserializer())\n" +
+                 "        .registerTypeAdapter(byte[].class, new com.tradingtechnologies.messaging.GsonHelper.CustomByteArrayDeserializer())\n"
         );
 
 
