@@ -36,6 +36,7 @@ class Tokens {
 	static final String EXTENSIONS = "extensions";
 	static final String RESERVED = "reserved";
 	static final String FIXENUM = "fixenum";
+	static final String CC_ENABLE_ARENAS = "cc_enable_arenas";
 
 	private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("[a-zA-Z_]+");
 	private static final Pattern MAP_PATTERN = Pattern.compile("map<[a-zA-Z_.]*");

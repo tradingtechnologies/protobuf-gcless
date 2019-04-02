@@ -42,7 +42,7 @@ class MemlessParser {
         tokens = file.split("[ \n\r]");
 
         String curToken = null;
-                String proto_version = "proto2";
+        String proto_version = "proto3";
         while ((curToken = getNextIgnoreNewLine()) != null) {
             if (curToken.equals(Tokens.PROTO_PACKAGE)) {
                 protoPackageName = getNextIgnoreNewLine();
@@ -112,6 +112,10 @@ class MemlessParser {
                     continue;
                                 }
                                 else if (optionType != null && optionType.equals(Tokens.OBJC_CLASS_PREFIX)) {
+                                    consumeTillMessage(";");
+                    continue;
+                                }
+                                else if (optionType != null && optionType.equals(Tokens.CC_ENABLE_ARENAS)) {
                                     consumeTillMessage(";");
                     continue;
                                 }
